@@ -14,7 +14,7 @@ import tempfile, os, random, sys, re
 #   Only supports polygon face geometry, no bezier curves or NURBS surfaces etc.
 #   Exports point positions, normals (N) and colors (Cd). Does not convert vertex normals to point normals.
 #   Exports named material assignments by the path to the material node (shop_materialpath attribute).
-#   Exports the vertex UV coordinate attribute (uv). Supports renaming the UV layer with a detail attribute 'uvLayerNames'. The first value of this array will override the 'uv' name.
+#   Exports the vertex UV coordinate attributes (uv).
 
 if len(hou.selectedNodes()) != 1:
     hou.ui.displayMessage("There must be exactly one selected node.", severity=hou.severityType.Error, title="Error")
@@ -28,8 +28,13 @@ else:
         rev.setInput(0, node)
         geo = rev.geometry()
         with open(os.path.join(tempfile.gettempdir(), "ODVertexData.txt"), "w") as f:
-            uvAttributeNames = geo.attribValue("uvLayerNames") if geo.findGlobalAttrib("uvLayerNames") else None
-        
+
+            texturecoordAttribs = [
+                attrib
+                for attrib in geo.vertexAttribs()
+                if attrib.options().get("type") == "texturecoord"
+            ]
+            
             pointNormals = [] if geo.findPointAttrib("N") else None
             pointColors = [] if geo.findPointAttrib("Cd") else None
             
@@ -43,31 +48,29 @@ else:
                     
             polygons = []
             polygonVertexPointIndices = []
-            vertexUvCoordinates = [] if geo.findVertexAttrib("uv") else None
-            vertexUvCoordinateCount = 0
+            polygonUvEntries = {}
             for p in geo.prims():
                 vertexPointIndices = []
                 if isinstance(p, hou.Face):
                     for v in p.vertices():
                         vertexPointIndices.append(v.point().number())
-                        if vertexUvCoordinates != None:
-                            vertexUvCoordinates.append(f'{v.attribValue("uv")[0]} {v.attribValue("uv")[1]}:PLY:{len(polygons)}:PNT:{v.point().number()}')
-                    
-                    vertexUvCoordinateCount += len(p.vertices())
+                        for uvAttrib in texturecoordAttribs:
+                            uvValue = v.attribValue(uvAttrib)
+                            polygonUvEntries.setdefault(uvAttrib.name(), []).append(f'{uvValue[0]} {uvValue[1]}:PLY:{len(polygons)}:PNT:{v.point().number()}')
+                            
                     materialName = p.attribValue("shop_materialpath") if geo.findPrimAttrib("shop_materialpath") else ""
                     polygons.append(f'{",".join(map(str, vertexPointIndices))};;{materialName};;FACE')
                 else:
                     print(f'Skipping unsupported primitive type "{p}".')                    
                 polygonVertexPointIndices.append(vertexPointIndices)
-
+                
             print(f'POLYGONS:{len(polygons)}', file=f)
             for p in polygons:
                 print(p, file=f)
                 
-            if vertexUvCoordinates != None:
-                layerName = uvAttributeNames[0] if uvAttributeNames != None else "uv"
-                print(f'UV:{layerName}:{vertexUvCoordinateCount}', file=f)
-                for u in vertexUvCoordinates:
+            for uvAttrib in texturecoordAttribs:                
+                print(f'UV:{uvAttrib.name()}:{len(polygonUvEntries[uvAttrib.name()])}', file=f)
+                for u in polygonUvEntries[uvAttrib.name()]:
                     print(f'{u}', file=f)
                     
             if pointNormals != None:
@@ -76,7 +79,7 @@ else:
                     print(f'{n[0]} {n[1]} {n[2]}', file=f)
                     
             if pointColors != None:
-                print(f'VERTEXCOLORS:{len(geo.points())}', file=f)
+                print(f'VERTEXCOLORS:{len(geo.points())}:DEF:1 1 1 1', file=f)
                 for c in pointColors:
                     print(f'{c[0]} {c[1]} {c[2]} 1.0', file=f)
                     
