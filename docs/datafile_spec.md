@@ -26,7 +26,7 @@ u v:pntid        (for continuous UVs)
 VERTEXNORMALS:# of vertexnormals
 x y z (for each normal)
 VERTEXCOLORS:# of vertexcolors
-r g b a (for each color, each component is 0-1 float)
+r g b a (for each color, each component is 0-1 float. If all you have is r g b, set 'a' to 1)
 ```
 
 ### Example data format for a box:
