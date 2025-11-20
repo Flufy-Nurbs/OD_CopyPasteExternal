@@ -25,8 +25,8 @@ u v:polyid:pntid (for discontinuous UVs) or
 u v:pntid        (for continuous UVs)
 VERTEXNORMALS:# of vertexnormals
 x y z (for each normal)
-VERTEXCOLORS:# of vertexcolors;DEF:r g b
-r g b a;PNT:pntid (for each color, each component is 0-1 float. If all you have is r g b, set 'a' to 1)
+VERTEXCOLORS:# of vertexcolors:DEF:r g b
+r g b a:PNT:pntid (for each color, each component is 0-1 float. If all you have is r g b, set 'a' to 1)
 ```
 
 ### Example data format for a box:
@@ -93,11 +93,11 @@ None
 None
 0.0 0.290000021458 0.0
 0.0 0.290000021458 0.0
-VERTEXCOLORS:4;DEF:1 1 1 1
-1 0 0 1;PNT:0
-0 1 0 1;PNT:1
-0 0 1 1;PNT:2
-0 0 0 1;PNT:3
+VERTEXCOLORS:4:DEF:1 1 1 1
+1 0 0 1:PNT:0
+0 1 0 1:PNT:1
+0 0 1 1:PNT:2
+0 0 0 1:PNT:3
 ```
 
 ## Important notes:
